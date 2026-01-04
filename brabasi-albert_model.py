@@ -3,15 +3,18 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.patches as mpatches
 import random
+import math
 
 # ==========================================
 #        USER CONFIGURATION SECTION
 # ==========================================
-
+#For the standard Barabási–Albert (BA) model, you need just two conceptual 
+# parameters: how many nodes the final graph should have and how many edges
+# each new node brings in when it is added
 # --- 1. Graph Structure (Barabási-Albert) ---
 NUM_NODES = 100
 EDGES_TO_ATTACH = 1  # Low number = Tree-like structure
-SEED = 4  # Fixed seed for consistent graph shape
+SEED = 3 # Random seed for reproducible graph generation. Set to None for random graph each run.
 
 # --- 2. Hub Definition & Infection Rules ---
 # Since this is a random graph, we define a "Hub" by how many connections it ends up with.
@@ -20,13 +23,13 @@ HUB_THRESHOLD = 3  # Any node with > 3 neighbors is treated as a Hub
 PROB_INFECTION_REGULAR = 1  # Chance a small node infects a neighbor
 PROB_INFECTION_HUB = 1  # Chance a Hub infects a neighbor
 
-START_NODE_STRATEGY = 'max_degree'  # 'max_degree' (start at biggest hub) or 'random' or specific ID (e.g. 0)
+START_NODE_STRATEGY = 61  # 'max_degree' (start at biggest hub) or 'random' or specific ID (e.g. 0)
 
 # --- 3. Visual Layout ---
 # 'spring' = Organic (uses LAYOUT_K)
 # 'kamada' = Optimized spacing (needs scipy library)
-LAYOUT_ALGORITHM = 'kamada'
-LAYOUT_K = 0.8  # Soreness for spring layout
+LAYOUT_ALGORITHM = 'spring'
+LAYOUT_K = 2  # Soreness for spring layout
 
 # --- 4. Color Settings ---
 BASE_COLOR_NAME = 'Red'  # Options: 'Blue', 'Green', 'Purple', 'Orange', 'Red'
@@ -41,17 +44,28 @@ COLOR_INTENSITY_OFFSET = 0.3  # Starting brightness
 COLOR_INTENSITY_MULTIPLIER = 0.7  # How much darker it gets
 
 # Rainbow Palette (If Escalation is False)
-COLOR_PALETTE = ['red', 'gold', 'orange', 'black', 'cyan', 'dodgerblue', 'purple', 'magenta']
+# Cycles through rainbow colors with varying tones: Cycle 1 (standard), Cycle 2 (light), Cycle 3 (dark), Cycle 4 (bright)
+COLOR_PALETTE = [
+    # Cycle 1: Standard rainbow tones
+    "red", "orange", "yellow", "green", "blue", "indigo", "violet",
+    # Cycle 2: Light/pastel tones
+    "lightcoral", "lightsalmon", "lightyellow", "lightgreen", "lightblue", "lightsteelblue", "lavender",
+    # Cycle 3: Dark/deep tones
+    "darkred", "darkorange", "gold", "darkgreen", "darkblue", "navy", "darkviolet",
+    # Cycle 4: Bright/vivid tones
+    "crimson", "coral", "gold", "limegreen", "skyblue", "mediumslateblue", "mediumorchid"
+]
 
 # --- 5. Node Appearance ---
 # True = Show neighbor count, False = Show ID
 SHOW_NEIGHBOR_COUNT = True
 
-SIZE_REGULAR_NODE = 50
-SIZE_HUB_NODE = 75
+SIZE_REGULAR_NODE = 300
+SIZE_HUB_NODE = 350
 
 # --- 6. Animation Settings ---
-FRAME_INTERVAL_MS = 1200
+FRAME_INTERVAL_MS = 2000
+INITIAL_DELAY_SECONDS = 1 # Delay before animation starts (frame 0 duration)
 MAX_FRAMES = 100
 
 # ==========================================
@@ -114,39 +128,50 @@ else:
 # Increased figure width to fit Legend
 fig, ax = plt.subplots(figsize=(14, 10))
 
+# Animation object container so update() can access it
+ani_container = {"ani": None}
 
 def update(frame):
-    infected_nodes = [n for n, s in node_status.items() if s == 1]
-    newly_infected = []
+    # For frame 0, just display the initial state without spreading
+    if frame == 0:
+        newly_infected = []
+    else:
+        infected_nodes = [n for n, s in node_status.items() if s == 1]
+        newly_infected = []
 
-    # --- Spreading Logic ---
-    for node in infected_nodes:
-        # Determine chance based on if the SPREADER is a Hub or Regular
-        # (Using the Threshold logic from your code)
-        if G.degree[node] > HUB_THRESHOLD:
-            current_chance = PROB_INFECTION_HUB
-        else:
-            current_chance = PROB_INFECTION_REGULAR
+        # --- Spreading Logic ---
+        for node in infected_nodes:
+            # Determine chance based on if the SPREADER is a Hub or Regular
+            # (Using the Threshold logic from your code)
+            if G.degree[node] > HUB_THRESHOLD:
+                current_chance = PROB_INFECTION_HUB
+            else:
+                current_chance = PROB_INFECTION_REGULAR
 
-        for neighbor in G.neighbors(node):
-            if node_status[neighbor] == 0:
-                if random.random() < current_chance:
-                    newly_infected.append(neighbor)
+            for neighbor in G.neighbors(node):
+                if node_status[neighbor] == 0:
+                    if random.random() < current_chance:
+                        newly_infected.append(neighbor)
 
-    # --- Update State & Colors ---
-    for n in newly_infected:
-        node_status[n] = 1
+        # --- Update State & Colors ---
+        for n in newly_infected:
+            node_status[n] = 1
 
-        if USE_COLOR_ESCALATION:
-            # Gradient Mode
-            progress = min(frame, 20) / 20.0
-            intensity = COLOR_INTENSITY_OFFSET + (COLOR_INTENSITY_MULTIPLIER * progress)
-            intensity = min(intensity, 1.0)
-            node_colors[n] = base_cmap(intensity)
-        else:
-            # Rainbow/Generations Mode
-            color_index = (frame + 1) % len(COLOR_PALETTE)
-            node_colors[n] = COLOR_PALETTE[color_index]
+            if USE_COLOR_ESCALATION:
+                # Gradient Mode
+                progress = min(frame, 20) / 20.0
+                intensity = COLOR_INTENSITY_OFFSET + (COLOR_INTENSITY_MULTIPLIER * progress)
+                intensity = min(intensity, 1.0)
+                node_colors[n] = base_cmap(intensity)
+            else:
+                # Rainbow/Generations Mode
+                color_index = frame % len(COLOR_PALETTE)
+                node_colors[n] = COLOR_PALETTE[color_index]
+        
+        # Check if all nodes are infected and stop animation
+        if sum(node_status.values()) == NUM_NODES:
+            if ani_container["ani"] is not None:
+                ani_container["ani"].event_source.stop()
 
     ax.clear()
 
@@ -162,7 +187,11 @@ def update(frame):
     # --- Draw Legend ---
     if not USE_COLOR_ESCALATION:
         legend_patches = []
-        generations_to_show = min(frame + 2, len(COLOR_PALETTE))
+        # For frame 0, only show Gen 0. For other frames, show up to frame+1 generations
+        if frame == 0:
+            generations_to_show = 1
+        else:
+            generations_to_show = min(frame + 2, len(COLOR_PALETTE))
         for i in range(generations_to_show):
             lbl = f"Gen {i}" + (" (Patient Zero)" if i == 0 else "")
             legend_patches.append(mpatches.Patch(color=COLOR_PALETTE[i], label=lbl))
@@ -179,11 +208,24 @@ def update(frame):
     plt.subplots_adjust(right=0.85)
 
     inf_count = sum(node_status.values())
-    ax.set_title(f"Hubs (>{HUB_THRESHOLD} neighbors) spread faster\nFrame {frame} | Infected: {inf_count}/{NUM_NODES}",
-                 fontsize=14)
+    # For frame 0, show "Starting..." message
+    if frame == 0:
+        ax.set_title(f"Hubs (>{HUB_THRESHOLD} neighbors) spread faster\nStarting... | Infected: {inf_count}/{NUM_NODES}",
+                     fontsize=14)
+    elif inf_count == NUM_NODES:
+        ax.set_title(f"Hubs (>{HUB_THRESHOLD} neighbors) spread faster\nFrame {frame} | Complete! All {NUM_NODES} nodes infected",
+                     fontsize=14)
+    else:
+        ax.set_title(f"Hubs (>{HUB_THRESHOLD} neighbors) spread faster\nFrame {frame} | Infected: {inf_count}/{NUM_NODES}",
+                     fontsize=14)
     ax.set_axis_off()
 
 
-ani = animation.FuncAnimation(fig, update, frames=MAX_FRAMES, interval=FRAME_INTERVAL_MS, repeat=False)
+# Create frame sequence: show frame 0 once, then delay before frame 1 starts
+initial_delay_frames = math.ceil(INITIAL_DELAY_SECONDS * 1000 / FRAME_INTERVAL_MS)
+frame_sequence = [0] + [0] * initial_delay_frames + list(range(1, MAX_FRAMES + 1))
+
+ani = animation.FuncAnimation(fig, update, frames=frame_sequence, interval=FRAME_INTERVAL_MS, repeat=False)
+ani_container["ani"] = ani
 
 plt.show()
