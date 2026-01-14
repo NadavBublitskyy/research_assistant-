@@ -210,13 +210,14 @@ def update(frame):
     inf_count = sum(node_status.values())
     # For frame 0, show "Starting..." message
     if frame == 0:
-        ax.set_title(f"Hubs (>{HUB_THRESHOLD} neighbors) spread faster\nStarting... | Infected: {inf_count}/{NUM_NODES}",
-                     fontsize=14)
+        ax.set_title(
+            f"The infection begins in a hub vertex\nvertices with degree above {HUB_THRESHOLD} pass the virus in a probability of {PROB_INFECTION_HUB}\nStarting... | Infected: {inf_count}/{NUM_NODES}",
+            fontsize=14)
     elif inf_count == NUM_NODES:
-        ax.set_title(f"Hubs (>{HUB_THRESHOLD} neighbors) spread faster\nFrame {frame} | Complete! All {NUM_NODES} nodes infected",
+        ax.set_title(f"The infection begins in a hub vertex\nvertices with degree above {HUB_THRESHOLD} pass the virus in a probability of {PROB_INFECTION_HUB}\nFrame {frame} | Complete! All {NUM_NODES} nodes infected",
                      fontsize=14)
     else:
-        ax.set_title(f"Hubs (>{HUB_THRESHOLD} neighbors) spread faster\nFrame {frame} | Infected: {inf_count}/{NUM_NODES}",
+        ax.set_title(f"The infection begins in a hub vertex\nvertices with degree above {HUB_THRESHOLD} pass the virus in a probability of {PROB_INFECTION_HUB}\nFrame {frame} | Infected: {inf_count}/{NUM_NODES}",
                      fontsize=14)
     ax.set_axis_off()
 
