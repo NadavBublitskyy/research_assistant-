@@ -13,17 +13,17 @@ import math
 # each new node brings in when it is added
 # --- 1. Graph Structure (Barabási-Albert) ---
 NUM_NODES = 100
-EDGES_TO_ATTACH = 1  # Low number = Tree-like structure
-SEED = 6 # Random seed for reproducible graph generation. Set to None for random graph each run.
+EDGES_TO_ATTACH = 2  # Low number = Tree-like structure
+SEED = 70 # Random seed for reproducible graph generation. Set to None for random graph each run.
 
 # --- 2. Hub Definition & Infection Rules ---
 # Since this is a random graph, we define a "Hub" by how many connections it ends up with.
-HUB_THRESHOLD = 10  # Any node with > 3 neighbors is treated as a Hub
+HUB_THRESHOLD = 6  # Any node with > 3 neighbors is treated as a Hub
 
 PROB_INFECTION_REGULAR = 1  # Chance a small node infects a neighbor
 PROB_INFECTION_HUB = 0 # Chance a Hub infects a neighbor
 
-START_NODE_STRATEGY = 3  # 'max_degree' (start at biggest hub) or 'random' or specific ID (e.g. 0)
+START_NODE_STRATEGY = 13  # 'max_degree' (start at biggest hub) or 'random' or specific ID (e.g. 0)
 
 # --- 3. Visual Layout ---
 # 'spring' = Organic (uses LAYOUT_K)
@@ -32,16 +32,16 @@ LAYOUT_ALGORITHM = 'kamada'
 LAYOUT_K = 2  # Soreness for spring layout
 
 # --- 4. Color Settings ---
-BASE_COLOR_NAME = 'Red'  # Options: 'Blue', 'Green', 'Purple', 'Orange', 'Red'
+BASE_COLOR_NAME = 'Green'  # Options: 'Blue', 'Green', 'Purple', 'Orange', 'Red'
 
 # Escalation Toggle:
 # True  = Gradient (Light -> Dark of the BASE_COLOR)
 # False = Rainbow (Generations: Red -> Yellow -> Orange...)
-USE_COLOR_ESCALATION = False
+USE_COLOR_ESCALATION = True
 
 # Gradient Math (If Escalation is True)
 COLOR_INTENSITY_OFFSET = 0.3  # Starting brightness
-COLOR_INTENSITY_MULTIPLIER = 0.7  # How much darker it gets
+COLOR_INTENSITY_MULTIPLIER = 3  # How much darker it gets
 
 # Rainbow Palette (If Escalation is False)
 # Cycles through rainbow colors with varying tones: Cycle 1 (standard), Cycle 2 (light), Cycle 3 (dark), Cycle 4 (bright)
