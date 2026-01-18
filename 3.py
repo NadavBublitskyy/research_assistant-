@@ -145,7 +145,7 @@ FORCEATLAS2_JITTER_TOLERANCE = 1.0
 FORCEATLAS2_BARNES_HUT_OPTIMIZE = False
 FORCEATLAS2_SCALING_RATIO = 80.0      # INCREASED MASSIVELY: This forces the graph to expand
 # --- 4. Color Settings ---
-BASE_COLOR_NAME = 'Green'  # Options: 'Blue', 'Green', 'Purple', 'Orange', 'Red'
+BASE_COLOR_NAME = 'Red'  # Options: 'Blue', 'Green', 'Purple', 'Orange', 'Red'
 
 # Escalation Toggle:
 # True  = Gradient (Dark -> Bright of the BASE_COLOR)

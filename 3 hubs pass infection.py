@@ -123,9 +123,9 @@ SEED = 70  # Random seed for reproducible graph generation. Set to None for rand
 HUB_THRESHOLD = 6  # Any node with > 3 neighbors is treated as a Hub
 
 PROB_INFECTION_REGULAR = 1  # Chance a small node infects a neighbor
-PROB_INFECTION_HUB = 0  # Chance a Hub infects a neighbor
+PROB_INFECTION_HUB = 1  # Chance a Hub infects a neighbor
 
-START_NODE_STRATEGY = 65  # 'max_degree' (start at biggest hub) or 'random' or specific ID (e.g. 0)
+START_NODE_STRATEGY = 40  # 'max_degree' (start at biggest hub) or 'random' or specific ID (e.g. 0)
 
 # --- 3. Visual Layout ---
 # 'spring' = Organic (uses LAYOUT_K)
@@ -155,7 +155,7 @@ USE_COLOR_ESCALATION = True
 
 # Gradient Math (If Escalation is True)
 COLOR_INTENSITY_OFFSET = 1  # Starting intensity (dark, 0.0-1.0)
-COLOR_INTENSITY_MULTIPLIER = 3  # How much to decrease (brightness range)
+COLOR_INTENSITY_MULTIPLIER = 4.5  # How much to decrease (brightness range)
 
 # Rainbow Palette (If Escalation is False)
 # Cycles through rainbow colors with varying tones: Cycle 1 (standard), Cycle 2 (light), Cycle 3 (dark), Cycle 4 (bright)
@@ -377,15 +377,15 @@ def update(frame):
     # For frame 0, show "Starting..." message
     if frame == 0:
         ax.set_title(
-            f"The infection begins in a regular vertex\nvertices with degree above {HUB_THRESHOLD} pass the virus in a probability of {PROB_INFECTION_HUB}\nStarting... | Infected: {inf_count}/{NUM_NODES}",
+            f"The infection begins in a regular vertex\nStarting... | Infected: {inf_count}/{NUM_NODES}",
             fontsize=14)
     elif inf_count == NUM_NODES:
         ax.set_title(
-            f"The infection begins in a regular vertex\nvertices with degree above {HUB_THRESHOLD} pass the virus in a probability of {PROB_INFECTION_HUB}\nFrame {frame} | Complete! All {NUM_NODES} nodes infected",
+            f"The infection begins in a regular vertex\nFrame {frame} | Complete! All {NUM_NODES} nodes infected",
             fontsize=14)
     else:
         ax.set_title(
-            f"The infection begins in a regular vertex\nvertices with degree above {HUB_THRESHOLD} pass the virus in a probability of {PROB_INFECTION_HUB}\nFrame {frame} | Infected: {inf_count}/{NUM_NODES}",
+            f"The infection begins in a regular vertex\nFrame {frame} | Infected: {inf_count}/{NUM_NODES}",
             fontsize=14)
     ax.set_axis_off()
 
