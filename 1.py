@@ -4,6 +4,7 @@ import matplotlib.animation as animation
 import matplotlib.patches as mpatches
 import random
 import math
+import textwrap
 
 # ==========================================
 #        USER CONFIGURATION SECTION
@@ -14,16 +15,16 @@ import math
 # --- 1. Graph Structure (Barabási-Albert) ---
 NUM_NODES = 100
 EDGES_TO_ATTACH = 1  # Low number = Tree-like structure
-SEED = 6 # Random seed for reproducible graph generation. Set to None for random graph each run.
+SEED = 8 # Random seed for reproducible graph generation. Set to None for random graph each run.
 
 # --- 2. Hub Definition & Infection Rules ---
 # Since this is a random graph, we define a "Hub" by how many connections it ends up with.
-HUB_THRESHOLD = 8  # Any node with > 3 neighbors is treated as a Hub
+HUB_THRESHOLD = 6  # Any node with > 3 neighbors is treated as a Hub
 
 PROB_INFECTION_REGULAR = 1  # Chance a small node infects a neighbor
-PROB_INFECTION_HUB = 0.15 # Chance a Hub infects a neighbor
+PROB_INFECTION_HUB = 0 # Chance a Hub infects a neighbor
 
-START_NODE_STRATEGY = 61  # 'max_degree' (start at biggest hub) or 'random' or specific ID (e.g. 0)
+START_NODE_STRATEGY = 37  # 'max_degree' (start at biggest hub) or 'random' or specific ID (e.g. 0)
 
 # --- 3. Visual Layout ---
 # 'spring' = Organic (uses LAYOUT_K)
@@ -32,16 +33,16 @@ LAYOUT_ALGORITHM = 'kamada'
 LAYOUT_K = 2  # Soreness for spring layout
 
 # --- 4. Color Settings ---
-BASE_COLOR_NAME = 'Red'  # Options: 'Blue', 'Green', 'Purple', 'Orange', 'Red'
+BASE_COLOR_NAME = 'Green'  # Options: 'Blue', 'Green', 'Purple', 'Orange', 'Red'
 
 # Escalation Toggle:
-# True  = Gradient (Light -> Dark of the BASE_COLOR)
+# True  = Gradient (Dark -> Bright of the BASE_COLOR)
 # False = Rainbow (Generations: Red -> Yellow -> Orange...)
-USE_COLOR_ESCALATION = False
+USE_COLOR_ESCALATION = True
 
 # Gradient Math (If Escalation is True)
-COLOR_INTENSITY_OFFSET = 0.3  # Starting brightness
-COLOR_INTENSITY_MULTIPLIER = 0.7  # How much darker it gets
+COLOR_INTENSITY_OFFSET = 1  # Starting intensity (dark, 0.0-1.0)
+COLOR_INTENSITY_MULTIPLIER = 3  # How much to decrease (brightness range)
 
 # Rainbow Palette (If Escalation is False)
 # Cycles through rainbow colors with varying tones: Cycle 1 (standard), Cycle 2 (light), Cycle 3 (dark), Cycle 4 (bright)
@@ -120,13 +121,19 @@ else:
 node_status[start_node] = 1
 # Set initial color
 if USE_COLOR_ESCALATION:
-    node_colors[start_node] = base_cmap(COLOR_INTENSITY_OFFSET)
+    # Use same formula as newly infected nodes with progress=0 (darkest)
+    progress = 0.0
+    intensity = COLOR_INTENSITY_OFFSET - (COLOR_INTENSITY_MULTIPLIER * progress)
+    intensity = max(0.0, min(intensity, 1.0))
+    node_colors[start_node] = base_cmap(intensity)
 else:
     node_colors[start_node] = COLOR_PALETTE[0]
 
-# --- 5. Animation ---
-# Increased figure width to fit Legend
+# --- 5. Animation Setup ---
 fig, ax = plt.subplots(figsize=(14, 10))
+
+# Reserve space for sidebar (Right 30%)
+plt.subplots_adjust(left=0.05, bottom=0.05, top=0.90, right=0.70)
 
 # Animation object container so update() can access it
 ani_container = {"ani": None}
@@ -160,8 +167,8 @@ def update(frame):
             if USE_COLOR_ESCALATION:
                 # Gradient Mode
                 progress = min(frame, 20) / 20.0
-                intensity = COLOR_INTENSITY_OFFSET + (COLOR_INTENSITY_MULTIPLIER * progress)
-                intensity = min(intensity, 1.0)
+                intensity = COLOR_INTENSITY_OFFSET - (COLOR_INTENSITY_MULTIPLIER * progress)
+                intensity = max(0.0, min(intensity, 1.0))
                 node_colors[n] = base_cmap(intensity)
             else:
                 # Rainbow/Generations Mode
@@ -185,9 +192,20 @@ def update(frame):
             edge_color='#bababa', width=0.8, alpha=1.0)
 
     # --- Draw Legend ---
+    # Legend settings
+    LEGEND_X = 1.05  # X-coordinate for both boxes
+    LEGEND_WIDTH_CHARS = 18  # Character width to match top and bottom sizes
+
+    num_hubs_no_pass = sum(1 for n in G.nodes() if G.degree[n] > HUB_THRESHOLD and PROB_INFECTION_HUB == 0)
+
+    # Wrap text tightly to match the width of the top legend
+    hub_label_raw = f"Number of hubs (don't pass the infection): {num_hubs_no_pass}"
+    wrapped_hub_label = textwrap.fill(hub_label_raw, width=LEGEND_WIDTH_CHARS)
+    hub_text_patch = mpatches.Patch(color='none', label=wrapped_hub_label)
+
+    # --- Top Legend (Gradient or Generations) ---
     if not USE_COLOR_ESCALATION:
         legend_patches = []
-        # For frame 0, only show Gen 0. For other frames, show up to frame+1 generations
         if frame == 0:
             generations_to_show = 1
         else:
@@ -196,28 +214,47 @@ def update(frame):
             lbl = f"Gen {i}" + (" (Patient Zero)" if i == 0 else "")
             legend_patches.append(mpatches.Patch(color=COLOR_PALETTE[i], label=lbl))
 
-        ax.legend(handles=legend_patches, title="Infection Stages",
-                  loc='upper left', bbox_to_anchor=(1, 1), fontsize='small')
+        legend1 = ax.legend(handles=legend_patches, title="Infection Stages",
+                             loc='upper left', bbox_to_anchor=(LEGEND_X, 1.0), fontsize='small',
+                             frameon=True, fancybox=True, shadow=False)
     else:
-        start_p = mpatches.Patch(color=base_cmap(COLOR_INTENSITY_OFFSET), label="Early Infection")
-        end_p = mpatches.Patch(color=base_cmap(1.0), label="Late Infection")
-        ax.legend(handles=[start_p, end_p], title=f"{BASE_COLOR_NAME} Gradient",
-                  loc='upper left', bbox_to_anchor=(1, 1))
+        early_progress = 0.0
+        early_intensity = COLOR_INTENSITY_OFFSET - (COLOR_INTENSITY_MULTIPLIER * early_progress)
+        early_intensity = max(0.0, min(early_intensity, 1.0))
 
-    # Adjust layout to make room for legend
-    plt.subplots_adjust(right=0.85)
+        late_progress = 0.2
+        late_intensity = COLOR_INTENSITY_OFFSET - (COLOR_INTENSITY_MULTIPLIER * late_progress)
+        late_intensity = max(0.0, min(late_intensity, 1.0))
+
+        start_p = mpatches.Patch(color=base_cmap(early_intensity), label="Early Infection")
+        end_p = mpatches.Patch(color=base_cmap(late_intensity), label="Late Infection")
+
+        legend1 = ax.legend(handles=[start_p, end_p], title=f"{BASE_COLOR_NAME} Gradient",
+                             loc='upper left', bbox_to_anchor=(LEGEND_X, 1.0), fontsize='small',
+                             frameon=True, fancybox=True, shadow=False)
+
+    ax.add_artist(legend1)
+
+    # --- Left Legend (Stats Box) ---
+    # handlelength=0 and handletextpad=0 remove the invisible icon space,
+    # forcing text to start at the immediate left edge.
+    ax.legend(handles=[hub_text_patch],
+              loc='upper left',
+              bbox_to_anchor=(LEGEND_X - 0.15, 1.0),
+              frameon=True, fancybox=True, shadow=False, fontsize='small',
+              handlelength=0, handletextpad=0)  # <--- This fixes the "start from beginning" issue
 
     inf_count = sum(node_status.values())
     # For frame 0, show "Starting..." message
     if frame == 0:
         ax.set_title(
-            f"The infection begins in a hub vertex\nvertices with degree above {HUB_THRESHOLD} pass the virus in a probability of {PROB_INFECTION_HUB}\nStarting... | Infected: {inf_count}/{NUM_NODES}",
+            f"The infection begins in a regular vertex\nvertices with degree above {HUB_THRESHOLD} pass the virus in a probability of {PROB_INFECTION_HUB}\nStarting... | Infected: {inf_count}/{NUM_NODES}",
             fontsize=14)
     elif inf_count == NUM_NODES:
-        ax.set_title(f"The infection begins in a hub vertex\nvertices with degree above {HUB_THRESHOLD} pass the virus in a probability of {PROB_INFECTION_HUB}\nFrame {frame} | Complete! All {NUM_NODES} nodes infected",
+        ax.set_title(f"The infection begins in a regular vertex\nvertices with degree above {HUB_THRESHOLD} pass the virus in a probability of {PROB_INFECTION_HUB}\nFrame {frame} | Complete! All {NUM_NODES} nodes infected",
                      fontsize=14)
     else:
-        ax.set_title(f"The infection begins in a hub vertex\nvertices with degree above {HUB_THRESHOLD} pass the virus in a probability of {PROB_INFECTION_HUB}\nFrame {frame} | Infected: {inf_count}/{NUM_NODES}",
+        ax.set_title(f"The infection begins in a regular vertex\nvertices with degree above {HUB_THRESHOLD} pass the virus in a probability of {PROB_INFECTION_HUB}\nFrame {frame} | Infected: {inf_count}/{NUM_NODES}",
                      fontsize=14)
     ax.set_axis_off()
 

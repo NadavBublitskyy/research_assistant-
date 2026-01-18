@@ -9,40 +9,40 @@ import textwrap
 # ==========================================
 #        USER CONFIGURATION SECTION
 # ==========================================
-#For the standard Barabási–Albert (BA) model, you need just two conceptual 
+# For the standard Barabási–Albert (BA) model, you need just two conceptual
 # parameters: how many nodes the final graph should have and how many edges
 # each new node brings in when it is added
 # --- 1. Graph Structure (Barabási-Albert) ---
 NUM_NODES = 100
 EDGES_TO_ATTACH = 1  # Low number = Tree-like structure
-SEED = 3 # Random seed for reproducible graph generation. Set to None for random graph each run.
+SEED = 8  # Random seed for reproducible graph generation. Set to None for random graph each run.
 
 # --- 2. Hub Definition & Infection Rules ---
 # Since this is a random graph, we define a "Hub" by how many connections it ends up with.
-HUB_THRESHOLD = 3  # Any node with > 3 neighbors is treated as a Hub
+HUB_THRESHOLD = 6  # Any node with > 3 neighbors is treated as a Hub
 
 PROB_INFECTION_REGULAR = 1  # Chance a small node infects a neighbor
 PROB_INFECTION_HUB = 1  # Chance a Hub infects a neighbor
 
-START_NODE_STRATEGY = 61  # 'max_degree' (start at biggest hub) or 'random' or specific ID (e.g. 0)
+START_NODE_STRATEGY = 13  # 'max_degree' (start at biggest hub) or 'random' or specific ID (e.g. 0)
 
 # --- 3. Visual Layout ---
 # 'spring' = Organic (uses LAYOUT_K)
 # 'kamada' = Optimized spacing (needs scipy library)
-LAYOUT_ALGORITHM = 'spring'
+LAYOUT_ALGORITHM = 'kamada'
 LAYOUT_K = 2  # Soreness for spring layout
 
 # --- 4. Color Settings ---
-BASE_COLOR_NAME = 'Red'  # Options: 'Blue', 'Green', 'Purple', 'Orange', 'Red'
+BASE_COLOR_NAME = 'Green'  # Options: 'Blue', 'Green', 'Purple', 'Orange', 'Red'
 
 # Escalation Toggle:
 # True  = Gradient (Dark -> Bright of the BASE_COLOR)
 # False = Rainbow (Generations: Red -> Yellow -> Orange...)
-USE_COLOR_ESCALATION = False
+USE_COLOR_ESCALATION = True
 
 # Gradient Math (If Escalation is True)
-COLOR_INTENSITY_OFFSET = 0.3  # Starting intensity (dark, 0.0-1.0)
-COLOR_INTENSITY_MULTIPLIER = 0.7  # How much to decrease (brightness range)
+COLOR_INTENSITY_OFFSET = 1  # Starting intensity (dark, 0.0-1.0)
+COLOR_INTENSITY_MULTIPLIER = 3  # How much to decrease (brightness range)
 
 # Rainbow Palette (If Escalation is False)
 # Cycles through rainbow colors with varying tones: Cycle 1 (standard), Cycle 2 (light), Cycle 3 (dark), Cycle 4 (bright)
@@ -66,7 +66,7 @@ SIZE_HUB_NODE = 350
 
 # --- 6. Animation Settings ---
 FRAME_INTERVAL_MS = 2000
-INITIAL_DELAY_SECONDS = 1 # Delay before animation starts (frame 0 duration)
+INITIAL_DELAY_SECONDS = 1  # Delay before animation starts (frame 0 duration)
 MAX_FRAMES = 100
 
 # ==========================================
@@ -138,6 +138,7 @@ plt.subplots_adjust(left=0.05, bottom=0.05, top=0.90, right=0.70)
 # Animation object container so update() can access it
 ani_container = {"ani": None}
 
+
 def update(frame):
     # For frame 0, just display the initial state without spreading
     if frame == 0:
@@ -174,7 +175,7 @@ def update(frame):
                 # Rainbow/Generations Mode
                 color_index = frame % len(COLOR_PALETTE)
                 node_colors[n] = COLOR_PALETTE[color_index]
-        
+
         # Check if all nodes are infected and stop animation
         if sum(node_status.values()) == NUM_NODES:
             if ani_container["ani"] is not None:
@@ -215,14 +216,14 @@ def update(frame):
             legend_patches.append(mpatches.Patch(color=COLOR_PALETTE[i], label=lbl))
 
         legend1 = ax.legend(handles=legend_patches, title="Infection Stages",
-                             loc='upper left', bbox_to_anchor=(LEGEND_X, 1.0), fontsize='small',
-                             frameon=True, fancybox=True, shadow=False)
+                            loc='upper left', bbox_to_anchor=(LEGEND_X, 1.0), fontsize='small',
+                            frameon=True, fancybox=True, shadow=False)
     else:
         early_progress = 0.0
         early_intensity = COLOR_INTENSITY_OFFSET - (COLOR_INTENSITY_MULTIPLIER * early_progress)
         early_intensity = max(0.0, min(early_intensity, 1.0))
 
-        late_progress = 0.5
+        late_progress = 0.2
         late_intensity = COLOR_INTENSITY_OFFSET - (COLOR_INTENSITY_MULTIPLIER * late_progress)
         late_intensity = max(0.0, min(late_intensity, 1.0))
 
@@ -230,8 +231,8 @@ def update(frame):
         end_p = mpatches.Patch(color=base_cmap(late_intensity), label="Late Infection")
 
         legend1 = ax.legend(handles=[start_p, end_p], title=f"{BASE_COLOR_NAME} Gradient",
-                             loc='upper left', bbox_to_anchor=(LEGEND_X, 1.0), fontsize='small',
-                             frameon=True, fancybox=True, shadow=False)
+                            loc='upper left', bbox_to_anchor=(LEGEND_X, 1.0), fontsize='small',
+                            frameon=True, fancybox=True, shadow=False)
 
     ax.add_artist(legend1)
 
@@ -247,14 +248,17 @@ def update(frame):
     inf_count = sum(node_status.values())
     # For frame 0, show "Starting..." message
     if frame == 0:
-        ax.set_title(f"Hubs (>{HUB_THRESHOLD} neighbors) spread faster\nStarting... | Infected: {inf_count}/{NUM_NODES}",
-                     fontsize=14)
+        ax.set_title(
+            f"The infection begins in a regular vertex\nStarting... | Infected: {inf_count}/{NUM_NODES}",
+            fontsize=14)
     elif inf_count == NUM_NODES:
-        ax.set_title(f"Hubs (>{HUB_THRESHOLD} neighbors) spread faster\nFrame {frame} | Complete! All {NUM_NODES} nodes infected",
-                     fontsize=14)
+        ax.set_title(
+            f"The infection begins in a regular vertex\nFrame {frame} | Complete! All {NUM_NODES} nodes infected",
+            fontsize=14)
     else:
-        ax.set_title(f"Hubs (>{HUB_THRESHOLD} neighbors) spread faster\nFrame {frame} | Infected: {inf_count}/{NUM_NODES}",
-                     fontsize=14)
+        ax.set_title(
+            f"The infection begins in a regular vertex\nFrame {frame} | Infected: {inf_count}/{NUM_NODES}",
+            fontsize=14)
     ax.set_axis_off()
 
 
